@@ -643,34 +643,51 @@ const callBackForPay = async (state, dispatch) => {
         "Payments[0].paymentDetails[0].receiptNumber",
         null
       );
-      console.log(response,"responseresponse")
-const rebeatData = get(
-  state.screenConfiguration.preparedFinalObject,
-  "applyScreenMdmsData.estimateCardData"
-);
-const filterRebate = rebeatData.filter(item=>item.name.labelKey =="PT_TIME_REBATE" )
-const paymentAmountType = state.screenConfiguration.preparedFinalObject.AmountType
-const businessServicePT = getQueryArg(window.location, "businessService");
-const consumerCodePT = getQueryArg(window.location, "consumerCode");
-const tenantIdPT = getQueryArg(window.location, "tenantId");
-// console.log("rebeatData", filterRebate, paymentAmountType, businessServicePT, consumerCodePT, tenantIdPT)
-if(response&&response.Payments.length>0){
-if(filterRebate&& filterRebate[0].name.labelKey === "PT_TIME_REBATE"&&filterRebate[0].value <=0&&paymentAmountType == "partial_amount"&&businessServicePT === "PT" ){
- const queryExpireObj =[{key: "consumerCode", value:consumerCodePT},{key:"tenantId", value:tenantIdPT}, {key:"businessService", value:businessServicePT }]
-  try {
-    let responseBillExpire = await httpRequest(
-      "post",
-      "/billing-service/bill/v2/_expireandcreatenewbill",
-      "",
-      queryExpireObj
-    );
-
-    console.log(responseBillExpire,"responseBillExpire")
-  } catch(err){
-    console.log(err,"eeeerr expire api")
-  }
-}
-}
+      if(response&&response.Payments.length>0){
+        const rebeatData = get(
+          state.screenConfiguration.preparedFinalObject,
+          "applyScreenMdmsData.estimateCardData"
+        );
+        const filterRebate = rebeatData.filter(item=>item.name.labelKey =="PT_TIME_REBATE" )
+        const paymentAmountType = state.screenConfiguration.preparedFinalObject.AmountType
+        const businessServicePT = getQueryArg(window.location, "businessService");
+        const consumerCodePT = getQueryArg(window.location, "consumerCode");
+        const tenantIdPT = getQueryArg(window.location, "tenantId");
+      if(filterRebate&& filterRebate[0].name.labelKey === "PT_TIME_REBATE"&&filterRebate[0].value <=0&&paymentAmountType == "partial_amount"&&businessServicePT === "PT" ){
+       const queryExpireObj =[{key: "consumerCode", value:consumerCodePT},{key:"tenantId", value:tenantIdPT}, {key:"businessService", value:businessServicePT }]
+        try {
+          let responseBillExpire = await httpRequest(
+            "post",
+            "/billing-service/bill/v2/_expireandcreatenewbill",
+            "",
+            queryExpireObj
+          );
+      
+          console.log(responseBillExpire,"responseBillExpire")
+          if (responseBillExpire && responseBillExpire.Bill[0]) {
+            dispatch(prepareFinalObject("ReceiptTemp[0].Bill", responseBillExpire.Bill));
+            const estimateData = createEstimateData(responseBillExpire.Bill[0], responseBillExpire.Bill[0].totalAmount);
+            estimateData &&
+              estimateData.length &&
+              dispatch(
+                prepareFinalObject(
+                  "applyScreenMdmsData.estimateCardData",
+                  estimateData
+                )
+              );
+          }
+        } catch(e){
+          dispatch(
+            toggleSnackbar(
+              true,
+              { labelName: e.message, labelKey: e.message },
+              "error"
+            )
+          );
+          console.log(err,"eeeerr expire api")
+        }
+      }
+      }
       // Search NOC application and update action to PAY
       const consumerCode = getQueryArg(window.location, "consumerCode");
       const tenantId = getQueryArg(window.location, "tenantId");
