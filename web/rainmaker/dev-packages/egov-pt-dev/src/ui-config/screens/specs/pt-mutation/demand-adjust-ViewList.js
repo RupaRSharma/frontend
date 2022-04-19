@@ -16,7 +16,7 @@ const tenantId = getQueryArg(window.location.href, "tenantId")
 const service = getQueryArg(window.location.href, "service")
 
 
-const searchApiCall = async (action, state, dispatch, consumerCode, tenantId, bService) => {
+export const searchApiCall = async (dispatch, consumerCode, tenantId, bService) => {
   if (consumerCode) {
     let queryObject = [{ key: "businessService", value: "PT" }, { key: "tenantId", value: tenantId }, { key: "consumerCode", value: consumerCode }]
  
@@ -70,7 +70,7 @@ const header = getCommonContainer({
   },
 });
 const beforeInitFn = (action, state, dispatch, consumerCode, tenantId, bService)=>{
-  searchApiCall(action, state, dispatch, consumerCode, tenantId, bService)
+  searchApiCall( dispatch, consumerCode, tenantId, bService)
 }
 
 const screenConfig = {

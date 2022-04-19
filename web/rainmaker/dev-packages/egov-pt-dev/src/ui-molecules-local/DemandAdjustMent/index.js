@@ -18,7 +18,7 @@ import { convertEpochToDate } from "../../ui-config/screens/specs/utils";
 import { Button } from "egov-ui-framework/ui-atoms";
 import { getQueryArg } from "egov-ui-framework/ui-utils/commons";
 import { httpRequest } from '../../ui-utils/api'
-
+import { searchApiCall } from "../../ui-config/screens/specs/pt-mutation/demand-adjust-ViewList"
 const styles = {
   card: {
     marginLeft: 8,
@@ -139,7 +139,8 @@ class DemandAdjust extends React.Component {
     rebateObj: "",
     errorOwnershipExemption: "",
     errorUsageExemption: "",
-    editYearWise: 0
+    editYearWise: 0,
+    clickCount :0
   }
 
   handleChange = (e) => {
@@ -225,6 +226,8 @@ class DemandAdjust extends React.Component {
         this.setState({ errorUsageExemption: "" })
       }
     }
+    
+
     return error;
   }
   onUpdateButtonCLick = async (index) => {
@@ -244,7 +247,7 @@ class DemandAdjust extends React.Component {
     let { preparedFinalObject } = screenConfiguration;
 
 
-    store.dispatch(showSpinner())
+    // store.dispatch(showSpinner())
     let demands = [preparedFinalObject && preparedFinalObject.Demands[index]];
   
 
@@ -266,38 +269,56 @@ class DemandAdjust extends React.Component {
  
     if (editableDemandDetail && editableDemandDetail.length > 0 && editableDemandDetail[0].taxHeadMasterCode == this.state.holdingObj) {
       const datatotal = this.state.holdingtax > this.state.totalHoldingtax ? this.state.holdingtax - this.state.totalHoldingtax : this.state.holdingtax == this.state.totalHoldingtax ? 0.00 : this.state.holdingtax - this.state.totalHoldingtax;
-   
-      newTaxHead.taxAmount = datatotal
-      newTaxHead.taxHeadMasterCode = "PT_HOLDING_TAX"
-      newTaxHead.demandId = editableDemandDetail[0].demandId
-      // console.log(newTaxHead,"newTaxHead")
-      demands[0].demandDetails.push(newTaxHead);
+       newTaxHead.taxAmount = parseInt(datatotal)
+        newTaxHead.taxHeadMasterCode = "PT_HOLDING_TAX"
+        newTaxHead.demandId = editableDemandDetail[0].demandId
+      if(this.state.clickCount > 0){
+        const filterDatasignleHolding = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode =="PT_HOLDING_TAX")
+        if(filterDatasignleHolding.length==0){
+          demands[0].demandDetails.push(newTaxHead);
+        }else if(filterDatasignleHolding.length>0){
+          filterDatasignleHolding[0].taxAmount = parseInt(datatotal)
+        }
+      }
+      else{
+        demands[0].demandDetails.push(newTaxHead);
+      }
+    
 
-      // console.log(demands, "Nero demands k")
+   
     }
 
     if (editableDemandDetailLight && editableDemandDetailLight.length > 0 && editableDemandDetailLight[0].taxHeadMasterCode == this.state.lightTaxObj) {
 
       const dataTotalLight = this.state.lightTax > this.state.TotalLightTax ? this.state.lightTax - this.state.TotalLightTax : this.state.lightTax == this.state.TotalLightTax ? 0.00 : this.state.lightTax - this.state.TotalLightTax;
-  
-      let newObj = {
-        "id": null,
-        "demandId": editableDemandDetailLight[0].demandId,
-        "taxHeadMasterCode": editableDemandDetailLight[0].taxHeadMasterCode,
-        "taxAmount": parseInt(dataTotalLight),
-        "collectionAmount": 0.00,
-        "additionalDetails": null,
-        "auditDetails": null,
-        "tenantId": editableDemandDetailLight[0].tenantId
-      }
-      demands[0].demandDetails.push(newObj);
 
+    let newObj = {
+      "id": null,
+      "demandId": editableDemandDetailLight[0].demandId,
+      "taxHeadMasterCode": editableDemandDetailLight[0].taxHeadMasterCode,
+      "taxAmount": parseInt(dataTotalLight),
+      "collectionAmount": 0.00,
+      "additionalDetails": null,
+      "auditDetails": null,
+      "tenantId": editableDemandDetailLight[0].tenantId
     }
+    if(this.state.clickCount > 0){
+      const filterDatasignle = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode =="PT_LIGHT_TAX")
+      if(filterDatasignle.length == 0){
+        demands[0].demandDetails.push(newObj);
+      }else if(filterDatasignle.length>0){
+        filterDatasignle[0].taxAmount = parseInt(dataTotalLight)
+      }
+      
+    }else{
+      demands[0].demandDetails.push(newObj);
+    }
+      
+        }
 
     if (editableDemandDetailWater && editableDemandDetailWater.length > 0 && editableDemandDetailWater[0].taxHeadMasterCode == this.state.waterTaxObj) {
    
       const dataTotalWater = this.state.waterTax > this.state.totalWaterTax ? this.state.waterTax - this.state.totalWaterTax : this.state.waterTax == this.state.totalWaterTax ? 0.00 : this.state.waterTax - this.state.totalWaterTax;
-     
       let newObj1 = {
         "id": null,
         "demandId": editableDemandDetailWater[0].demandId,
@@ -308,8 +329,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailWater[0].tenantId
       }
-      demands[0].demandDetails.push(newObj1);
 
+      if(this.state.clickCount > 0){
+        const filterDatasignleWater = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.waterTaxObj)
+        if(filterDatasignleWater.length == 0){
+          demands[0].demandDetails.push(newObj1);
+        }else if(filterDatasignleWater.length>0){
+          filterDatasignleWater[0].taxAmount = parseInt(dataTotalWater)
+        }
+       
+      }else{
+        demands[0].demandDetails.push(newObj1);
+      }
     }
 
     if (editableDemandDetailLatrineTax && editableDemandDetailLatrineTax.length > 0 && editableDemandDetailLatrineTax[0].taxHeadMasterCode == this.state.LatrineTaxObj) {
@@ -326,7 +357,19 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailLatrineTax[0].tenantId
       }
-      demands[0].demandDetails.push(newObj2);
+
+      if(this.state.clickCount > 0){
+        const filterDatasignleLat = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.LatrineTaxObj)
+        if(filterDatasignleLat.length == 0){
+          demands[0].demandDetails.push(newObj2);
+        }else if(filterDatasignleLat.length >0){
+          filterDatasignleLat[0].taxAmount = parseInt(dataTotalLatt)
+        }
+     
+      }else{
+        demands[0].demandDetails.push(newObj2);
+      }
+      
 
     }
     if (editableDemandDetailDrainageTax && editableDemandDetailDrainageTax.length > 0 && editableDemandDetailDrainageTax[0].taxHeadMasterCode == this.state.DrainageTaxObj) {
@@ -343,7 +386,19 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailDrainageTax[0].tenantId
       }
-      demands[0].demandDetails.push(newObj3);
+
+      if(this.state.clickCount > 0){
+        const filterDatasignleDrai = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.DrainageTaxObj)
+        if(filterDatasignleDrai.length==0){
+          demands[0].demandDetails.push(newObj3);
+        }else if(filterDatasignleDrai.length>0){
+          filterDatasignleDrai[0].taxAmount = parseInt(dataTotalDrainageTax)
+        }
+       
+      }else{
+        demands[0].demandDetails.push(newObj3);
+      }
+    
 
     }
 
@@ -361,7 +416,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailParkingTax[0].tenantId
       }
-      demands[0].demandDetails.push(newObj4);
+      if(this.state.clickCount > 0){
+        const filterDatasignlePraking = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.ParkingTaxObj)
+        if(filterDatasignlePraking.length==0){
+          demands[0].demandDetails.push(newObj4);
+        }else if(filterDatasignlePraking.length >0){
+          filterDatasignlePraking[0].taxAmount = parseInt(dataTotalParkingTax)
+        }
+      
+      }else{
+        demands[0].demandDetails.push(newObj4);
+      }
+    
 
     }
 
@@ -379,7 +445,19 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailSolidWasteUserCharges[0].tenantId
       }
-      demands[0].demandDetails.push(newObj5);
+      if(this.state.clickCount > 0){
+        const filterDatasignleSolidWasteUserChargesObj = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.SolidWasteUserChargesObj)
+        if(filterDatasignleSolidWasteUserChargesObj.length== 0){
+          demands[0].demandDetails.push(newObj5);
+        }else if(filterDatasignleSolidWasteUserChargesObj.length>0){
+          filterDatasignleSolidWasteUserChargesObj[0].taxAmount = parseInt(dataTotalSolidWasteUserCharges)
+        }
+       
+      }else{
+        demands[0].demandDetails.push(newObj5);
+      }
+    
+    
 
     }
 
@@ -397,7 +475,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailotherDues[0].tenantId
       }
-      demands[0].demandDetails.push(newObj6);
+      if(this.state.clickCount > 0){
+        const filterDatasignlotherDues = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.otherDuesObj)
+        if(filterDatasignlotherDues.length == 0){
+          demands[0].demandDetails.push(newObj6);
+        }else if(filterDatasignlotherDues.length>0){
+          filterDatasignlotherDues[0].taxAmount = parseInt(dataTotalotherDues)
+        }
+       
+      }else{
+        demands[0].demandDetails.push(newObj6);
+      }
+     
 
     }
 
@@ -415,7 +504,19 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailinterest[0].tenantId
       }
-      demands[0].demandDetails.push(newObj7);
+
+      if(this.state.clickCount > 0){
+        const filterDatasignlInterest = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.interestObj)
+        if(filterDatasignlInterest.length== 0){
+          demands[0].demandDetails.push(newObj7);
+        } else if(filterDatasignlInterest.length>0){
+          filterDatasignlInterest[0].taxAmount = parseInt(dataTotalInterest)
+        }
+      
+      }else{
+        demands[0].demandDetails.push(newObj7);
+      }
+     
 
     }
 
@@ -433,7 +534,20 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailserviceTax[0].tenantId
       }
-      demands[0].demandDetails.push(newObj8);
+
+      if(this.state.clickCount > 0){
+        const filterDatasignlserviceTax = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.serviceTaxObj)
+        if(filterDatasignlserviceTax.length== 0){
+          demands[0].demandDetails.push(newObj8);
+        } else if(filterDatasignlserviceTax.length>0){
+          filterDatasignlserviceTax[0].taxAmount = parseInt(dataTotaltotalServiceTax)
+        }
+     
+      }else{
+        demands[0].demandDetails.push(newObj8);
+      }
+     
+    
 
     }
     if (editableDemandDetailUsageExemption && editableDemandDetailUsageExemption.length > 0 && editableDemandDetailUsageExemption[0].taxHeadMasterCode == this.state.UsageExemptionObj) {
@@ -450,7 +564,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailUsageExemption[0].tenantId
       }
-      demands[0].demandDetails.push(newObj9);
+      if(this.state.clickCount > 0){
+        const filterDatasignlUsageExemption = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.UsageExemptionObj)
+        if(filterDatasignlUsageExemption.length== 0){
+          demands[0].demandDetails.push(newObj9);
+        } else if(filterDatasignlUsageExemption.length>0){
+          filterDatasignlUsageExemption[0].taxAmount = parseInt(dataTotaltotallUsageExemption)
+        }
+      
+      }else{
+        demands[0].demandDetails.push(newObj9);
+      }
+    
 
     }
     if (editableDemandDetailOwnershipExemption && editableDemandDetailOwnershipExemption.length > 0 && editableDemandDetailOwnershipExemption[0].taxHeadMasterCode == this.state.ownershipExemptionObj) {
@@ -467,7 +592,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailOwnershipExemption[0].tenantId
       }
-      demands[0].demandDetails.push(newObj10);
+      if(this.state.clickCount > 0){
+        const filterDatasignlownershipExemption = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.ownershipExemptionObj)
+        if(filterDatasignlownershipExemption.length == 0){
+          demands[0].demandDetails.push(newObj10);
+        }else if(filterDatasignlownershipExemption.length>0){
+          filterDatasignlownershipExemption[0].taxAmount = parseInt(dataTotaltotallOwnershipExemption)
+        }
+      
+      }else{
+        demands[0].demandDetails.push(newObj10);
+      }
+   
 
     }
     if (editableDemandDetailRebate && editableDemandDetailRebate.length > 0 && editableDemandDetailRebate[0].taxHeadMasterCode == this.state.rebateObj) {
@@ -484,7 +620,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailRebate[0].tenantId
       }
-      demands[0].demandDetails.push(newObj11);
+      if(this.state.clickCount > 0){
+        const filterDatasignlrebate = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.rebateObj)
+        if(filterDatasignlrebate.length == 0){
+          demands[0].demandDetails.push(newObj11);
+        }else if(filterDatasignlrebate.length >0){
+          filterDatasignlrebate[0].taxAmount = parseInt(dataTotaltotallRebate)
+        }
+      
+      }else{
+        demands[0].demandDetails.push(newObj11);
+      }
+     
 
     }
     if (editableDemandDetailPenalty && editableDemandDetailPenalty.length > 0 && editableDemandDetailPenalty[0].taxHeadMasterCode == this.state.penaltyObj) {
@@ -501,7 +648,18 @@ class DemandAdjust extends React.Component {
         "auditDetails": null,
         "tenantId": editableDemandDetailPenalty[0].tenantId
       }
-      demands[0].demandDetails.push(newObj12);
+      if(this.state.clickCount > 0){
+        const filterDatasignlpenaltyObj = demands[0].demandDetails.filter(item=>item.id == null&&item.taxHeadMasterCode ==this.state.penaltyObj)
+        if(filterDatasignlpenaltyObj.length == 0){
+          demands[0].demandDetails.push(newObj12);
+        }else if(filterDatasignlpenaltyObj.length>0){
+          filterDatasignlpenaltyObj[0].taxAmount = parseInt(dataTotaltotallPenalty)
+        }
+       
+      }else{
+        demands[0].demandDetails.push(newObj12);
+      }
+    
 
     }
     else {
@@ -728,10 +886,10 @@ class DemandAdjust extends React.Component {
     }
 
     try {
-      store.dispatch(showSpinner())
+      // store.dispatch(showSpinner())
       let validtionCheck = this.checkvalidation()
 
-      let updatedRes = validtionCheck == true ? await updateDemand(demands) : "";
+      let updatedRes = validtionCheck == true ? await updateDemand(demands) :  "";
 
       if (updatedRes && updatedRes.Demands && updatedRes.Demands.length > 0) {
 
@@ -743,11 +901,11 @@ class DemandAdjust extends React.Component {
       }
 
     } catch (error) {
-      console.log(error, "Nero Error")
+    this.setState({clickCount:this.state.clickCount += 1})
       store.dispatch(toggleSnackbar(
         true,
         {
-          labelName: "Please select date",
+          labelName: "",
           labelKey: error.message,
         },
         "error"
@@ -756,57 +914,13 @@ class DemandAdjust extends React.Component {
     }
 
   }
-  onCancelButtonCLick = (data) => {
-    data && data.demandDetails.map((item) => {
-      switch (item.taxHeadMasterCode) {
-        case "PT_HOLDING_TAX":
-          this.setState({ holdingtax: item.taxAmount, totalHoldingtax: item.taxAmount })
-          break;
-        case "PT_LIGHT_TAX":
-          this.setState({ lightTax: item.taxAmount, TotalLightTax: item.taxAmount })
-          break;
-        case "PT_WATER_TAX":
-          this.setState({ waterTax: item.taxAmount, totalWaterTax: item.taxAmount })
-          break;
-        case "PT_DRAINAGE_TAX":
-          this.setState({ DrainageTax: item.taxAmount, totalDrainageTax: item.taxAmount })
-          break;
-        case "PT_LATRINE_TAX":
-          this.setState({ LatrineTax: item.taxAmount, totalLatrineTax: item.taxAmount })
-          break;
-        case "PT_PARKING_TAX":
-          this.setState({ ParkingTax: item.taxAmount, totalParkingTax: item.taxAmount })
-          break;
-        case "PT_SOLID_WASTE_USER_CHARGES":
-          this.setState({ SolidWasteUserCharges: item.taxAmount, totalSolidWasteUserCharges: item.taxAmount })
-          break;
-        case "PT_INTEREST":
-          this.setState({ interest: item.taxAmount, totalInterest: item.taxAmount })
-          break;
-        case "PT_SERVICE_TAX":
-          this.setState({ serviceTax: item.taxAmount, totalServiceTax: item.taxAmount })
-          break;
-        case "PT_OTHER_DUES":
-          this.setState({ otherDues: item.taxAmount, totalOtherDues: item.taxAmount })
-          break;
-        case "PT_USAGE_EXCEMPTION":
-          this.setState({ UsageExemption: item.taxAmount, totalUsageExemption: item.taxAmount })
-          break;
-
-        case "PT_OWNERSHIP_EXCEMPTION":
-          this.setState({ ownershipExemption: item.taxAmount, totalOwnershipExemption: item.taxAmount })
-          break;
-        case "PT_PENALTY":
-          this.setState({ penalty: item.taxAmount, totalPenalty: item.taxAmount })
-          break;
-        case "PT_REBATE":
-          this.setState({ rebate: item.taxAmount, totalRebate: item.taxAmount })
-          break;
-        default:
-          break;
-      }
-    })
+  onCancelButtonCLick = async() => {
     this.setState({ isEditVisible: false })
+    let consumerCode = getQueryArg(window.location.href, "propertyId");
+    let tenantId = getQueryArg(window.location.href, "tenantId");
+    let bService = getQueryArg(window.location.href, "businessService");
+    await searchApiCall(store.dispatch, consumerCode, tenantId, bService)
+  
   }
   editLastDemandData = async (data, year) => {
     let editYear = new Date(data.taxPeriodFrom).getFullYear()
@@ -1300,7 +1414,7 @@ class DemandAdjust extends React.Component {
                                 className="assessment-button"
                                 variant="contained"
                                 color="primary"
-                                onClick={() => this.onCancelButtonCLick(item)}
+                                onClick={() => this.onCancelButtonCLick()}
                               >
                                 <LabelContainer
                                   labelName={`CANCEL`}
